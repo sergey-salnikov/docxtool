@@ -47,12 +47,26 @@ def parse_resize_spec(spec):
 
 def resize_element(element, resizer):
     style = element.attrib['style']
-    width = pt_in_style(style, 'width')
-    height = pt_in_style(style, 'height')
-    width, height = resizer(width, height)
-    style = pt_in_style(style, 'width', width)
-    style = pt_in_style(style, 'height', height)
+    old_width = pt_in_style(style, 'width')
+    old_height = pt_in_style(style, 'height')
+    new_width, new_height = resizer(old_width, old_height)
+    style = pt_in_style(style, 'width', new_width)
+    style = pt_in_style(style, 'height', new_height)
     element.attrib['style'] = style
+
+    for position_xml in element.getparent().getparent().xpath('w:rPr/w:position'):
+        attrib_name = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val'
+        position = int(position_xml.attrib[attrib_name])
+
+        # This is measured in OOXML in strange units: 1/2 pt. So, this
+        # really adjusts by half of height difference, which should
+        # keep the center of the formula at the same height. One would
+        # probably like to keep the baseline instead, but it doesn't
+        # seem to be recorded anywhere: when I resize the formula in
+        # Word manually, it keeps the bottom line of the formula, just
+        # like the version of this script without the hack.
+        position -= round(new_height - old_height)
+        position_xml.attrib[attrib_name] = str(position)
 
 
 def pt_in_style(style, attribute, new_value=None):
