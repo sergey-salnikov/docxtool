@@ -18,12 +18,14 @@ def main():
             for element in elements:
                 resize_element(element, resizer)
             print("Resized %d elements" % len(elements))
-        document.save(file)
+        if not args.test:
+            document.save(file)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--resize', metavar='SPEC')
+    parser.add_argument('-t', '--test', action='store_true')
     parser.add_argument('file', nargs='+')
     return parser.parse_args()
 
